@@ -10,12 +10,22 @@ import {
 import { useRouter } from 'expo-router';
 
 export default function ProductCard({
-  id,
-  nombre,
-  precio,
-  categoria,
-  imagen,
+  product,
+  isFavorite,
+  onToggleFavorite,
+  onAddToCart,
+  cartDisabled = false,
+  showFavoriteToggle = true,
+  interactionsDisabled = false,
 }) {
+  const {
+    id,
+    nombre,
+    precio,
+    categoria,
+    imagen,
+  } = product;
+
   const router = useRouter();
 
   const abrirProducto = () => {
@@ -28,34 +38,88 @@ export default function ProductCard({
   };
 
   return (
-    <Pressable
-      testID={`product-${id}`}
-      onPress={abrirProducto}
-      style={({ pressed }) => [
-        styles.card,
-        pressed && styles.pressed,
-      ]}
-    >
-      <Image
-        source={imagen}
-        style={styles.image}
-        resizeMode="cover"
-      />
+    <View style={styles.card}>
+      <Pressable
+        testID={`product-${id}`}
+        onPress={abrirProducto}
+        disabled={interactionsDisabled}
+        style={({ pressed }) => [
+          styles.product,
+          pressed && styles.pressed,
+        ]}
+      >
+        <Image
+          source={imagen}
+          style={styles.image}
+          resizeMode="cover"
+        />
 
-      <View style={styles.info}>
-        <Text style={styles.category}>
-          {categoria}
-        </Text>
+        <View style={styles.info}>
+          <Text style={styles.category}>
+            {categoria}
+          </Text>
 
-        <Text style={styles.name}>
-          {nombre}
-        </Text>
+          <Text style={styles.name}>
+            {nombre}
+          </Text>
 
-        <Text style={styles.price}>
-          $ {precio.toLocaleString('es-AR')}
-        </Text>
-      </View>
-    </Pressable>
+          <Text style={styles.price}>
+            $ {precio.toLocaleString('es-AR')}
+          </Text>
+        </View>
+      </Pressable>
+
+      {showFavoriteToggle && (
+        <Pressable
+          testID={`favorite-toggle-${id}`}
+          onPress={() => onToggleFavorite(product)}
+          disabled={!onToggleFavorite}
+          accessibilityRole="button"
+          accessibilityLabel={
+            isFavorite
+              ? `Quitar ${nombre} de favoritos`
+              : `Agregar ${nombre} a favoritos`
+          }
+          accessibilityState={{
+            disabled: !onToggleFavorite,
+            selected: isFavorite,
+          }}
+          style={({ pressed }) => [
+            styles.favoriteButton,
+            pressed && styles.favoritePressed,
+          ]}
+        >
+          <Text
+            style={[
+              styles.favoriteIcon,
+              isFavorite && styles.favoriteIconSelected,
+            ]}
+          >
+            {isFavorite ? '♥' : '♡'}
+          </Text>
+        </Pressable>
+      )}
+
+      {onAddToCart && (
+        <Pressable
+          testID={`cart-add-${id}`}
+          onPress={() => onAddToCart(product)}
+          disabled={cartDisabled}
+          accessibilityRole="button"
+          accessibilityLabel={`Agregar ${nombre} al carrito`}
+          accessibilityState={{
+            disabled: cartDisabled,
+          }}
+          style={({ pressed }) => [
+            styles.cartButton,
+            pressed && !cartDisabled && styles.favoritePressed,
+            cartDisabled && styles.cartButtonDisabled,
+          ]}
+        >
+          <Text style={styles.cartIcon}>+</Text>
+        </Pressable>
+      )}
+    </View>
   );
 }
 
@@ -79,12 +143,16 @@ const shadow = Platform.select({
 
 const styles = StyleSheet.create({
   card: {
-    flexDirection: 'row',
-    gap: 12,
+    position: 'relative',
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 12,
     ...shadow,
+  },
+
+  product: {
+    flexDirection: 'row',
+    gap: 12,
   },
 
   pressed: {
@@ -100,6 +168,7 @@ const styles = StyleSheet.create({
   info: {
     flex: 1,
     justifyContent: 'center',
+    paddingRight: 34,
   },
 
   category: {
@@ -121,5 +190,54 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginTop: 8,
+  },
+
+  favoriteButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1,
+  },
+
+  favoritePressed: {
+    opacity: 0.7,
+  },
+
+  favoriteIcon: {
+    color: '#52667A',
+    fontSize: 28,
+    lineHeight: 32,
+  },
+
+  favoriteIconSelected: {
+    color: '#E53935',
+  },
+
+  cartButton: {
+    position: 'absolute',
+    right: 8,
+    bottom: 8,
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0B5FFF',
+    borderRadius: 18,
+    zIndex: 1,
+  },
+
+  cartButtonDisabled: {
+    opacity: 0.45,
+  },
+
+  cartIcon: {
+    color: '#FFFFFF',
+    fontSize: 24,
+    fontWeight: '700',
+    lineHeight: 28,
   },
 });

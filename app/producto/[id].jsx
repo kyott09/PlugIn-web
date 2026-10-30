@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 import {
   Image,
   ScrollView,
@@ -13,15 +15,33 @@ import {
 } from 'expo-router';
 
 import { productos } from '../../data/products';
+import { useCarrito } from '../../contexts/CarritoContext';
 
 export default function ProductDetail() {
   const { id } = useLocalSearchParams();
 
   const router = useRouter();
+  const [mensajeCarrito, setMensajeCarrito] = useState('');
+  const {
+    agregarProducto,
+    cargandoCarrito,
+    carritoCargado,
+    errorCarrito,
+    guardandoCarrito,
+  } = useCarrito();
 
   const producto = productos.find(
     (item) => String(item.id) === String(id)
   );
+
+  const agregarAlCarrito = async () => {
+    const agregado = await agregarProducto(producto);
+    setMensajeCarrito(
+      agregado
+        ? 'Producto agregado al carrito.'
+        : 'No se pudo agregar el producto. Intentá nuevamente.'
+    );
+  };
 
   if (!producto) {
     return (
@@ -104,12 +124,45 @@ export default function ProductDetail() {
         </Text>
 
         <Text style={styles.stock}>
-          {producto.stock} unidades
+          {producto.stock == null
+            ? 'Consultar disponibilidad'
+            : `${producto.stock} unidades`}
         </Text>
       </View>
 
       <TouchableOpacity
-        style={styles.boton}
+        testID="add-to-cart"
+        style={[
+          styles.boton,
+          styles.botonCarrito,
+          (cargandoCarrito || guardandoCarrito || !carritoCargado)
+            && styles.botonDeshabilitado,
+        ]}
+        onPress={agregarAlCarrito}
+        disabled={cargandoCarrito || guardandoCarrito || !carritoCargado}
+        accessibilityRole="button"
+        accessibilityLabel={`Agregar ${producto.nombre} al carrito`}
+      >
+        <Text style={styles.botonTexto}>
+          Agregar al carrito
+        </Text>
+      </TouchableOpacity>
+
+      {errorCarrito || mensajeCarrito ? (
+        <Text
+          accessibilityLiveRegion="polite"
+          style={[
+            styles.mensajeCarrito,
+            (errorCarrito || mensajeCarrito.startsWith('No se pudo'))
+              && styles.mensajeCarritoError,
+          ]}
+        >
+          {errorCarrito || mensajeCarrito}
+        </Text>
+      ) : null}
+
+      <TouchableOpacity
+        style={[styles.boton, styles.botonVolver]}
         onPress={() => router.back()}
       >
         <Text style={styles.botonTexto}>
@@ -226,10 +279,34 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
+  botonCarrito: {
+    marginBottom: 10,
+  },
+
+  botonVolver: {
+    marginTop: 8,
+  },
+
+  botonDeshabilitado: {
+    opacity: 0.5,
+  },
+
   botonTexto: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
+  },
+
+  mensajeCarrito: {
+    color: '#247A42',
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+
+  mensajeCarritoError: {
+    color: '#B42318',
   },
 
   errorContainer: {

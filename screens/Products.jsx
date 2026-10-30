@@ -10,9 +10,23 @@ import {
 
 import ProductCard from '../components/ProductCard';
 
+import { useFavoritos } from '../contexts/FavoritosContext';
+import { useCarrito } from '../contexts/CarritoContext';
 import { productos } from '../data/products';
 
 export default function Products() {
+  const {
+    favoritos,
+    cargandoFavoritos,
+    guardandoFavoritos,
+    alternarFavorito,
+  } = useFavoritos();
+  const {
+    cargandoCarrito,
+    guardandoCarrito,
+    agregarProducto,
+  } = useCarrito();
+
   const { width } = useWindowDimensions();
 
   const compact = width < 380;
@@ -32,7 +46,19 @@ export default function Products() {
         data={productos}
         keyExtractor={(item) => String(item.id)}
         renderItem={({ item }) => (
-          <ProductCard {...item} />
+          <ProductCard
+            product={item}
+            isFavorite={favoritos.includes(item.id)}
+            onToggleFavorite={
+              cargandoFavoritos || guardandoFavoritos
+                ? undefined
+                : alternarFavorito
+            }
+            onAddToCart={agregarProducto}
+            cartDisabled={
+              cargandoCarrito || guardandoCarrito
+            }
+          />
         )}
         contentContainerStyle={[
           styles.content,
