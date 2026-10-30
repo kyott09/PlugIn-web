@@ -1,4 +1,7 @@
-import { useState } from 'react';
+import {
+  startTransition,
+  useCallback,
+} from 'react';
 
 import {
   ActivityIndicator,
@@ -30,20 +33,23 @@ export default function Favoritos() {
     reintentarCarga,
   } = useFavoritos();
 
-  const [arrastrando, setArrastrando] = useState(false);
   const productosFavoritos = favoritos
     .map((id) => productosPorId.get(id))
     .filter((producto) => producto !== undefined);
 
-  const renderItem = ({ item, drag, isActive }) => (
+  const renderItem = useCallback(({ item, drag, isActive }) => (
     <FavoriteGestureRow
       product={item}
       drag={drag}
       isActive={isActive}
-      disabled={guardandoFavoritos || arrastrando}
+      disabled={guardandoFavoritos}
       onDelete={quitarFavorito}
     />
-  );
+  ), [guardandoFavoritos, quitarFavorito]);
+
+  const renderSeparator = useCallback(() => (
+    <View style={styles.separator} />
+  ), []);
 
   if (cargandoFavoritos || (errorFavoritos && favoritos.length === 0)) {
     return (
@@ -100,16 +106,15 @@ export default function Favoritos() {
         data={productosFavoritos}
         keyExtractor={(item) => String(item.id)}
         renderItem={renderItem}
-        onDragBegin={() => setArrastrando(true)}
         onDragEnd={({ data }) => {
-          setArrastrando(false);
-          void actualizarFavoritos(data.map((producto) => producto.id));
+          const ids = data.map((producto) => producto.id);
+          startTransition(() => {
+            void actualizarFavoritos(ids);
+          });
         }}
         scrollEnabled={!guardandoFavoritos}
         contentContainerStyle={styles.listContent}
-        ItemSeparatorComponent={() => (
-          <View style={styles.separator} />
-        )}
+        ItemSeparatorComponent={renderSeparator}
         ListHeaderComponent={(
           <View style={styles.listHeader}>
             <Text style={styles.title}>
